@@ -112,7 +112,7 @@ def detect_community_tpr(G, seed, beta, epsilon, alpha):
 
     return [G.subgraph(map(lambda t: t[0], sorted_r[:k])) for k in k_star]
 
-def detect_community_both(G, seed, beta, epsilon, alpha):
+def detect_community_both(G, seed, beta, epsilon, alpha, plot=True):
     r, track_r = approx_page_rank(G, seed, beta, epsilon)
     sorted_r = sorted(track_r.items(), key=operator.itemgetter(1), reverse=True)
 
@@ -158,29 +158,27 @@ def detect_community_both(G, seed, beta, epsilon, alpha):
             highest_score_tpr = scores_tpr[k-1]
         elif candidate_k_tpr is not None and scores_tpr[k-1] < scores_tpr[candidate_k_tpr - 1]:
             candidate_k_tpr = None
-
-    plt.plot(range(1, k+1), scores_conductance, label='Conductance')
-    plt.plot(range(1, k+1), scores_tpr, label='TPR')
-    plt.plot(k_star_conductance, list(scores_conductance[k-1] for k in k_star_conductance), 'ro', label='Conductance k*')
-    plt.plot(k_star_tpr, list(scores_tpr[k-1] for k in k_star_tpr), 'go', label='TPR k*')
-    plt.xlabel('k')
-    plt.ylabel('Score')
-    plt.xscale('log')
-    plt.yscale('log')
-    plt.title('Score vs. k')
-    plt.legend()
-    plt.show()
+    if plot:
+        plt.plot(range(1, k+1), scores_conductance, label='Conductance')
+        plt.plot(range(1, k+1), scores_tpr, label='TPR')
+        plt.plot(k_star_conductance, list(scores_conductance[k-1] for k in k_star_conductance), 'ro', label='Conductance k*')
+        plt.plot(k_star_tpr, list(scores_tpr[k-1] for k in k_star_tpr), 'go', label='TPR k*')
+        plt.xlabel('k')
+        plt.ylabel('Score')
+        plt.xscale('log')
+        plt.yscale('log')
+        plt.title('Score vs. k')
+        plt.legend()
+        plt.show()
 
     return [G.subgraph(map(lambda t: t[0], sorted_r[:k])) for k in k_star_conductance], [G.subgraph(map(lambda t: t[0], sorted_r[:k])) for k in k_star_tpr]
 
 #c1 ground truth, c2 predicted
 
-def evaluate_f1(c1, c2):
-	c1_nodes = c1.subgraph.nodes()
-	c2_nodes = c2.subgraph.nodes()
+def evaluate_f1(c1_nodes, c2_nodes):
 
-	relv = len(filter(lambda v: v in c1_nodes, c2_nodes)) 
+	relv = len(set(c1_nodes).intersection(c2_nodes))
 	nrelv = len(c1_nodes) - relv
 	irelv = len(c2_nodes) - relv
 	
-	return nrelv, relv, irelv
+	return 2 * relv / (2 * relv + nrelv + irelv)
